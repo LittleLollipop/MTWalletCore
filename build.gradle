@@ -1,0 +1,44 @@
+apply plugin: 'com.android.library'
+
+
+android {
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
+
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 27
+        versionCode 1
+        versionName "0.0.1"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    compile 'org.web3j:core:3.3.1-android'
+    compile 'io.ethmobile:ethdroid:2.0.0-m2'
+    compile 'org.ethereum:geth:1.6.7'
+    compile 'com.github.LittleLollipop:androidMVT:0.0.14'
+    compile 'com.orhanobut:hawk:2.0.1'
+    compile 'com.android.volley:volley:1.1.0'
+    compile 'org.bitcoinj:bitcoinj-core:0.14.7'
+    testCompile 'junit:junit:4.12'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+}
