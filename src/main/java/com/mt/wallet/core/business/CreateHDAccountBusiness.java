@@ -24,6 +24,7 @@ import com.mt.wallet.core.WalletApplication;
 import com.mt.wallet.core.account.Account;
 import com.mt.wallet.core.account.AccountData;
 import com.mt.wallet.core.Wallet;
+import com.mt.wallet.core.safe.SafeCase;
 
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
@@ -52,11 +53,13 @@ public class CreateHDAccountBusiness extends ImportAccountBusiness {
     byte[] privateKey;
     List<String> mWordList;
     List<String> wordInfo;
+    String mnemonicPathStr;
 
-    public CreateHDAccountBusiness(String name, String key, String passphrase, String mnemonicPassphrase, CallBack callBack){
+    public CreateHDAccountBusiness(String name, String key, SafeCase passphrase, String mnemonicPassphrase, String mnemonicPathStr, CallBack callBack){
         super(name, null, null, passphrase, null, 0);
         this.mnemonicPassphrase = mnemonicPassphrase;
         this.callBackNed = callBack;
+        this.mnemonicPathStr = mnemonicPathStr;
         if(!TextUtils.isEmpty(key)){
             mWordList = Arrays.asList(key.split(" "));
         }

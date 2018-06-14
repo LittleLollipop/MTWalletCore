@@ -16,10 +16,12 @@ package com.mt.wallet.core;
  * limitations under the License.
  */
 
+import android.support.annotation.Keep;
+
 /**
  * Created by sai on 2018/5/14.
  */
-
+@Keep
 public class ContractTransactionInfo extends TransactionInfo {
 
     String tokenName;

@@ -19,6 +19,7 @@ package com.mt.wallet.core.business.eth;
 import com.mt.wallet.core.business.TransactionBusiness;
 import com.mt.wallet.core.TokenInfo;
 import com.mt.wallet.core.Wallet;
+import com.mt.wallet.core.safe.SafeCase;
 
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeReference;
@@ -26,6 +27,7 @@ import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Int;
 import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.utils.Numeric;
 
 import java.math.BigDecimal;
@@ -41,7 +43,7 @@ public class ContractTransactionBusiness extends TransactionBusiness {
     String tokenValue;
     TokenInfo tokenInfo;
 
-    public ContractTransactionBusiness(int accountNumber, String passphrase, String to, String value, BigDecimal gasPrice, BigDecimal gasLimit, TokenInfo tokenInfo, CallBack callBack) {
+    public ContractTransactionBusiness(int accountNumber, SafeCase passphrase, String to, String value, BigDecimal gasPrice, BigDecimal gasLimit, TokenInfo tokenInfo, CallBack callBack) {
 
         super(accountNumber, passphrase, tokenInfo.getContract(), "0", gasPrice, gasLimit, null, callBack);
         this.tokenValue = value;
@@ -52,10 +54,12 @@ public class ContractTransactionBusiness extends TransactionBusiness {
     @Override
     public void run(Wallet.Avatar avatar) {
 
-        super.hexData = FunctionEncoder.encode(new Function(
+        Function function = new Function(
                 "transfer",
-                Arrays.asList((Type) new Address(toAddress), new Int(new BigDecimal(Numeric.decodeQuantity(tokenValue)).multiply(BigDecimal.TEN.pow(tokenInfo.getDecimals())).toBigInteger())),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Type>() {})));
+                Arrays.asList((Type) new Address(toAddress), new Uint256(new BigDecimal(tokenValue).multiply(BigDecimal.TEN.pow(tokenInfo.getDecimals())).toBigInteger())),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Type>() {}));
+
+        super.hexData = FunctionEncoder.encode(function);
 
         super.run(avatar);
     }

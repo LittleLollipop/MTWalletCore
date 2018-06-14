@@ -16,12 +16,14 @@ package com.mt.wallet.core.loopring;
  * limitations under the License.
  */
 
+import android.support.annotation.Keep;
+
 import java.util.ArrayList;
 
 /**
  * Created by sai on 2018/5/3.
  */
-
+@Keep
 public class Token {
 
     private long decimals;

@@ -91,4 +91,26 @@ public class AccountData {
         }
         Hawk.put(ACCOUNTS, accounts);
     }
+
+    public static void deleteAccount(Account account) {
+        Gson gson = new Gson();
+        SparseArray<String> accounts = getAccountsString();
+
+        int i = 0;
+
+        for(; i < accounts.size(); i++){
+            if(gson.fromJson(accounts.get(i), Account.class).getAddress().equals(account.getAddress()))
+                accounts.remove(i);
+        }
+
+        for(int j = 0; j < i; j ++){
+            if(accounts.get(j) == null && accounts.get(j + 1) != null){
+                accounts.put(j, accounts.get(j + 1));
+                accounts.remove(j + 1);
+            }
+        }
+
+
+        Hawk.put(ACCOUNTS, accounts);
+    }
 }

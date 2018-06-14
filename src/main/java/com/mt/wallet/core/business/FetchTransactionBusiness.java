@@ -50,11 +50,11 @@ public class FetchTransactionBusiness implements Business {
 
     @Override
     public void finish() {
-        callBack.onFetchOver(transactionInfo);
+        callBack.onFetchOver(transactionInfo, txHash);
     }
 
     public interface CallBack{
 
-        void onFetchOver(TransactionInfo transactionInfo);
+        void onFetchOver(TransactionInfo transactionInfo, String txHash);
     }
 }

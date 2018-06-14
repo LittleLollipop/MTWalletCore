@@ -16,6 +16,8 @@ package com.mt.wallet.core.account;
  * limitations under the License.
  */
 
+import android.support.annotation.Keep;
+
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -24,7 +26,7 @@ import java.util.List;
 /**
  * Created by sai on 2018/4/16.
  */
-
+@Keep
 public class Account {
 
     private String name;

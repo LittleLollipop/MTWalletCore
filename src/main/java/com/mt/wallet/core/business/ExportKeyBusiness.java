@@ -19,6 +19,7 @@ package com.mt.wallet.core.business;
 import com.mt.wallet.core.account.Account;
 import com.mt.wallet.core.Business;
 import com.mt.wallet.core.Wallet;
+import com.mt.wallet.core.safe.SafeCase;
 
 import java.util.List;
 
@@ -33,7 +34,8 @@ public class ExportKeyBusiness implements Business {
     public static final int TYPE_MNEMONIC = 3;
 
     int type;
-    String password;
+    SafeCase password;
+    String newPassword;
     CallBack callBack;
     Account account;
 
@@ -41,12 +43,13 @@ public class ExportKeyBusiness implements Business {
     String key;
     String[] mnemonic;
 
-    public ExportKeyBusiness(int type, String password, CallBack callBack, Account account){
+    public ExportKeyBusiness(int type, SafeCase password, CallBack callBack, Account account, String newPassword){
 
         this.type = type;
         this.password = password;
         this.callBack = callBack;
         this.account = account;
+        this.newPassword = newPassword;
     }
 
     @Override
@@ -75,8 +78,12 @@ public class ExportKeyBusiness implements Business {
         return type;
     }
 
-    public String getPassword() {
+    public SafeCase getPassword() {
         return password;
+    }
+
+    public String getNewPassword() {
+        return newPassword;
     }
 
     public void updateKey(String key) {

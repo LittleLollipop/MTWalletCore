@@ -16,6 +16,8 @@ package com.mt.wallet.core.business;
  * limitations under the License.
  */
 
+import android.text.TextUtils;
+
 import com.mt.wallet.core.Business;
 import com.mt.wallet.core.Wallet;
 
@@ -29,6 +31,7 @@ public class UpdateBalanceBusiness implements Business {
 
     String address;
     String balanceInfo;
+    String errorInfo;
     CallBack callBack;
 
     public UpdateBalanceBusiness(@NotNull String addressInfo,@NotNull CallBack callBack) {
@@ -49,7 +52,12 @@ public class UpdateBalanceBusiness implements Business {
 
     @Override
     public void finish() {
-        callBack.onUpdateBalance(balanceInfo);
+        if(TextUtils.isEmpty(balanceInfo)){
+            callBack.onError(errorInfo);
+        }else{
+            callBack.onUpdateBalance(balanceInfo);
+        }
+
     }
 
     public String getAddress() {
@@ -60,9 +68,15 @@ public class UpdateBalanceBusiness implements Business {
         this.balanceInfo = balanceInfo;
     }
 
+    public void updateErrorMessage(String message) {
+        errorInfo = message;
+    }
+
     public interface CallBack{
 
         void onUpdateBalance(String balanceInfo);
+
+        void onError(String errorInfo);
     }
 
 }

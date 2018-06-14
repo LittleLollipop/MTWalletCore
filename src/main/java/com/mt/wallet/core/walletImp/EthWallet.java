@@ -29,6 +29,7 @@ import com.mt.wallet.core.Config;
 import com.mt.wallet.core.TransactionInfo;
 import com.mt.wallet.core.WalletApplication;
 import com.mt.wallet.core.business.ChangePasswordBusiness;
+import com.mt.wallet.core.business.DeleteAccountBusiness;
 import com.mt.wallet.core.business.ExportKeyBusiness;
 import com.mt.wallet.core.business.FetchHistoryBusiness;
 import com.mt.wallet.core.business.eth.ContractBusiness;
@@ -39,6 +40,7 @@ import com.mt.wallet.core.business.TransactionBusiness;
 import com.mt.wallet.core.business.UpdateBalanceBusiness;
 import com.mt.wallet.core.ContractTransactionInfo;
 import com.mt.wallet.core.Wallet;
+import com.mt.wallet.core.safe.SafeCase;
 import com.mt.wallet.core.support.Utils;
 
 import org.ethereum.geth.Account;
@@ -79,16 +81,12 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.ethmobile.ethdroid.ChainConfig;
-import io.ethmobile.ethdroid.EthDroid;
-import io.ethmobile.ethdroid.KeyManager;
 
 import static com.mt.wallet.core.business.ExportKeyBusiness.TYPE_KEYSTORE;
 import static com.mt.wallet.core.business.ExportKeyBusiness.TYPE_MNEMONIC;
 import static com.mt.wallet.core.business.ExportKeyBusiness.TYPE_PRIVATE_KEY;
 import static com.mt.wallet.core.business.ImportAccountBusiness.IMPORT_TYPE_ECDSAKEY;
 import static com.mt.wallet.core.business.ImportAccountBusiness.IMPORT_TYPE_KEYSTORE;
-import static io.ethmobile.ethdroid.Utils.deleteDirIfExists;
 
 /**
  * Created by Sai on 2018/4/3.
@@ -110,29 +108,10 @@ public class EthWallet extends Wallet.Avatar {
 
     public static final String ENV_MAINNET = "mainnet";
     public static final String ENV_RINKEBY = "rinkeby";
-    String genesis = "{\n" +
-            "  \"nonce\":\"0x0000000000000042\",\n" +
-            "  \"mixhash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\n" +
-            "  \"difficulty\": \"0x1\",\n" +
-            "  \"coinbase\":\"0x0000000000000000000000000000000000000000\",\n" +
-            "  \"timestamp\": \"0x00\",\n" +
-            "  \"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\n" +
-            "  \"extraData\": \"0x20180112\",\n" +
-            "  \"gasLimit\":\"0x0000ffff\",\n" +
-            "  \"alloc\": {},\n" +
-            "  \"config\": {\n" +
-            "    \"chainId\": 1,\n" +
-            "    \"homesteadBlock\": 0,\n" +
-            "    \"eip155Block\": 0,\n" +
-            "    \"eip158Block\": 0\n" +
-            "  }\n" +
-            "}";
-    String enode = "enode://1bde9da1a19539983debf3491f35330781fc9c89750fcc78e8536c04d1e2e8fe0d4bd61bff46924d109e7b1db618d7a9723684a4e256256f7a4b8efcc10083e1@106.14.236.175:30303?discport:30304";
-
 
     private Web3j web3j;
     private String datadir;
-    private EthDroid ethdroid;
+    KeyManager keyManager;
     long networkID;
     Wallet.Config config;
 
@@ -157,18 +136,21 @@ public class EthWallet extends Wallet.Avatar {
         }
 
         try {
-            ethdroid = new EthDroid.Builder(datadir)
-                    .withDefaultContext()
-                    .withChainConfig(new ChainConfig.Builder(networkID, genesis, enode).build())
-                    .withKeyManager(KeyManager.newKeyManager(datadir))
-                    .build();
-
-            ethdroid.start();
+            keyManager = KeyManager.newKeyManager(datadir);
         } catch (Exception e) {
             Log.e(getClass().getName(), "", e);
         }
 
+    }
 
+    public static void deleteDirIfExists(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                deleteDirIfExists(f);
+            }
+        }
+        file.delete();
     }
 
     @Override
@@ -180,14 +162,14 @@ public class EthWallet extends Wallet.Avatar {
             balanceBusiness.updateInfo(""+Convert.fromWei(balance.getBalance().toString(), Convert.Unit.ETHER));
         } catch (Exception e) {
             Log.e(getClass().getName(), "", e);
-            balanceBusiness.updateInfo(e.getMessage());
+            balanceBusiness.updateErrorMessage(e.getMessage());
         }
     }
 
     @Override
     public void createAccount(CreateAccountBusiness createAccountBusiness) {
         try {
-            org.ethereum.geth.Account account = ethdroid.getKeyManager().newAccount(createAccountBusiness.getPassphrase());
+            org.ethereum.geth.Account account = keyManager.newAccount(createAccountBusiness.getPassphrase());
             createAccountBusiness.updateAccount(account);
             createAccountBusiness.updateInfo("address:" + Utils.toChecksumAddress(account.getAddress().getHex()));
 
@@ -204,7 +186,7 @@ public class EthWallet extends Wallet.Avatar {
             ArrayList<String> addressList = new ArrayList<>();
 
             try {
-                List<org.ethereum.geth.Account> accounts = ethdroid.getKeyManager().getAccounts();
+                List<org.ethereum.geth.Account> accounts = keyManager.getAccounts();
 
                 for(org.ethereum.geth.Account account : accounts)
                     addressList.add(Utils.toChecksumAddress(account.getAddress().getHex()));
@@ -218,7 +200,7 @@ public class EthWallet extends Wallet.Avatar {
             StringBuilder stringBuilder = new StringBuilder();
 
             try {
-                List<org.ethereum.geth.Account> accounts = ethdroid.getKeyManager().getAccounts();
+                List<org.ethereum.geth.Account> accounts = keyManager.getAccounts();
 
                 for(org.ethereum.geth.Account account : accounts)
                     stringBuilder.append(Utils.toChecksumAddress(account.getAddress().getHex()) + ",");
@@ -239,16 +221,16 @@ public class EthWallet extends Wallet.Avatar {
         try {
             org.ethereum.geth.Account account = null;
             if(importAccountBusiness.getType() == IMPORT_TYPE_KEYSTORE){
-                account = ethdroid.getKeyManager().getKeystore().importKey(importAccountBusiness.getKeyText().getBytes(), importAccountBusiness.getPassphrase(), importAccountBusiness.getNewPassphrase());
+                account = keyManager.getKeystore().importKey(importAccountBusiness.getKeyText().getBytes(), importAccountBusiness.getPassphrase(), importAccountBusiness.getNewPassphrase().value(new char[]{}));
 
             }
             if(importAccountBusiness.getType() == IMPORT_TYPE_ECDSAKEY){
-                account = ethdroid.getKeyManager().getKeystore().importECDSAKey(importAccountBusiness.getECDSAKey(), importAccountBusiness.getNewPassphrase());
+                account = keyManager.getKeystore().importECDSAKey(importAccountBusiness.getECDSAKey(), importAccountBusiness.getNewPassphrase().value(new char[]{}));
             }
 
             if(account != null){
 
-                List<org.ethereum.geth.Account> accounts = ethdroid.getKeyManager().getAccounts();
+                List<org.ethereum.geth.Account> accounts = keyManager.getAccounts();
 
                 importAccountBusiness.updateInfo(Utils.toChecksumAddress(account.getAddress().getHex()), accounts.indexOf(account));
             }
@@ -268,7 +250,7 @@ public class EthWallet extends Wallet.Avatar {
             BigInteger gasLimit = transactionBusiness.getGasLimit().toBigInteger();
             BigInt value = Geth.newBigInt(Convert.toWei(transactionBusiness.getValue(), Convert.Unit.ETHER).longValue());
 
-            org.ethereum.geth.Account account = ethdroid.getKeyManager().getAccounts().get(transactionBusiness.getAccountNumber());
+            org.ethereum.geth.Account account = keyManager.getAccounts().get(transactionBusiness.getAccountNumber());
             String to = transactionBusiness.getToAddress();
             String resolvedAddress;
 
@@ -279,16 +261,19 @@ public class EthWallet extends Wallet.Avatar {
                 return;
             }
 
-            String data = transactionBusiness.getData();
-            data = Numeric.cleanHexPrefix(data);
+            byte[] data = new byte[0];
+            if(!TextUtils.isEmpty(transactionBusiness.getData()))
+                data = Numeric.hexStringToByteArray(transactionBusiness.getData());
+
+
             BigInteger nonce = web3j.ethGetTransactionCount(
                     account.getAddress().getHex(), DefaultBlockParameterName.PENDING).send().getTransactionCount();
 
-            BigInt gasInt = Geth.newBigInt(gasLimit.longValue());
+//            BigInt gasInt = Geth.newBigInt(gasLimit.longValue());
             BigInt gasPriceInt = Geth.newBigInt(gasPrice.longValue());
-            org.ethereum.geth.Transaction transaction = Geth.newTransaction(nonce.longValue(), new Address(resolvedAddress), value, gasInt, gasPriceInt, data.getBytes());
+            org.ethereum.geth.Transaction transaction = Geth.newTransaction(nonce.longValue(), new Address(resolvedAddress), value, gasLimit.longValue(), gasPriceInt, data);
 
-            EthSendTransaction ethSendRawTransaction = web3j.ethSendRawTransaction(Numeric.toHexString(ethdroid.getKeyManager().getKeystore().signTxPassphrase(account, transactionBusiness.getPassphrase(),transaction, new BigInt(networkID)).encodeRLP())).send();
+            EthSendTransaction ethSendRawTransaction = web3j.ethSendRawTransaction(Numeric.toHexString(keyManager.getKeystore().signTxPassphrase(account, transactionBusiness.getPassphrase().value(new char[]{}),transaction, new BigInt(networkID)).encodeRLP())).send();
             String info = ethSendRawTransaction.getTransactionHash();
             if(TextUtils.isEmpty(info)){
                 transactionBusiness.updateErrorInfo(ethSendRawTransaction.getError().getMessage());
@@ -315,7 +300,7 @@ public class EthWallet extends Wallet.Avatar {
     @Override
     public String getAccountAddress(int accountNumber) {
         try {
-            return Utils.toChecksumAddress(ethdroid.getKeyManager().getAccounts().get(accountNumber).getAddress().getHex());
+            return Utils.toChecksumAddress(keyManager.getAccounts().get(accountNumber).getAddress().getHex());
         } catch (Exception e) {
             Log.e(getClass().getName(), "", e);
             return e.getMessage();
@@ -328,6 +313,9 @@ public class EthWallet extends Wallet.Avatar {
         TransactionInfo transactionInfo = null;
         try {
             org.web3j.protocol.core.methods.response.Transaction transaction = web3j.ethGetTransactionByHash(hash).sendAsync().get().getTransaction();
+
+            if(transaction == null)
+                return null;
 
             transactionInfo = new TransactionInfo();
             transactionInfo.setBlockHash(transaction.getBlockHash());
@@ -366,7 +354,7 @@ public class EthWallet extends Wallet.Avatar {
             }
             url = url + "&contractaddress=" + business.getContractAddress() +
                     "&address=" + business.getAddress() +
-                    "&page=1&offset=100&sort=desc&apikey=3QAU4CZC4SISSV6DHYZ84CPKWK5YJGB3PX";
+                    "&page=1&offset=30&sort=desc&apikey=3QAU4CZC4SISSV6DHYZ84CPKWK5YJGB3PX";
 
         }else{
             switch (config.getEnv()){
@@ -381,7 +369,7 @@ public class EthWallet extends Wallet.Avatar {
                     break;
             }
             url = url + "&address=" + business.getAddress() +
-                    "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc" +
+                    "&startblock=0&endblock=99999999&page=1&offset=30&sort=desc" +
                     "&apikey=3QAU4CZC4SISSV6DHYZ84CPKWK5YJGB3PX\n";
         }
 
@@ -389,16 +377,22 @@ public class EthWallet extends Wallet.Avatar {
 
         StringRequest request = new StringRequest(url, new Response.Listener<String>() {
             @Override
-            public void onResponse(String response) {
-                Gson gson = new Gson();
-                JsonObject responseJson = gson.fromJson(response, JsonObject.class);
-                if(responseJson.get("status").getAsInt() == 1){
+            public void onResponse(final String response) {
+                WalletApplication.getInstance().getWallet().runInMachine(new Runnable() {
+                    @Override
+                    public void run() {
+                        Gson gson = new Gson();
+                        JsonObject responseJson = gson.fromJson(response, JsonObject.class);
+                        if(responseJson.get("status").getAsInt() == 1){
 
-                    ArrayList<ContractTransactionInfo> transactions = gson.fromJson(responseJson.get("result"), new TypeToken<ArrayList<ContractTransactionInfo>>(){}.getType());
-                    business.updateInfo(transactions);
-                }else{
-                    business.updateErrorInfo(responseJson.get("message").getAsString());
-                }
+                            ArrayList<ContractTransactionInfo> transactions = gson.fromJson(responseJson.get("result"), new TypeToken<ArrayList<ContractTransactionInfo>>(){}.getType());
+                            business.updateInfo(transactions);
+                        }else{
+                            business.updateErrorInfo(responseJson.get("message").getAsString());
+                        }
+                    }
+                });
+
             }
         }, new Response.ErrorListener() {
             @Override
@@ -427,8 +421,8 @@ public class EthWallet extends Wallet.Avatar {
     @Override
     public void changePassword(ChangePasswordBusiness changePasswordBusiness) {
         try {
-            ethdroid.getKeyManager().updateAccountPassphrase(findAccount(changePasswordBusiness.getAccountAddress()),
-                    changePasswordBusiness.getPassword(), changePasswordBusiness.getNewPassword());
+            keyManager.updateAccountPassphrase(findAccount(changePasswordBusiness.getAccountAddress()),
+                    changePasswordBusiness.getPassword().value(new char[]{}), changePasswordBusiness.getNewPassword().value(new char[]{}));
 
         } catch (Exception e) {
             Log.e(getClass().getName(), "", e);
@@ -439,7 +433,7 @@ public class EthWallet extends Wallet.Avatar {
     private Account findAccount(String address){
         List<Account> accounts = null;
         try {
-            accounts = ethdroid.getKeyManager().getAccounts();
+            accounts = keyManager.getAccounts();
         } catch (Exception e) {
             Log.e(getClass().getName(), "", e);
         }
@@ -461,7 +455,7 @@ public class EthWallet extends Wallet.Avatar {
         switch (exportKeyBusiness.getExportType()){
             case TYPE_PRIVATE_KEY:
                 try {
-                    ECKeyPair keyPair = decrypt(exportKeyBusiness.getPassword(), new String(ethdroid.getKeyManager().getKeystore().exportKey(findAccount(exportKeyBusiness.getAccountAddress()), exportKeyBusiness.getPassword(), exportKeyBusiness.getPassword())));
+                    ECKeyPair keyPair = decrypt(exportKeyBusiness.getPassword().value(new char[]{}), new String(keyManager.getKeystore().exportKey(findAccount(exportKeyBusiness.getAccountAddress()), exportKeyBusiness.getPassword().value(new char[]{}), exportKeyBusiness.getPassword().value(new char[]{}))));
                     if(keyPair != null)
                         exportKeyBusiness.updateKey(Numeric.toHexStringNoPrefix(keyPair.getPrivateKey()));
 
@@ -471,7 +465,7 @@ public class EthWallet extends Wallet.Avatar {
                 break;
             case TYPE_KEYSTORE:
                 try {
-                    exportKeyBusiness.updateKey(new String(ethdroid.getKeyManager().getKeystore().exportKey(findAccount(exportKeyBusiness.getAccountAddress()), exportKeyBusiness.getPassword(), exportKeyBusiness.getPassword())));
+                    exportKeyBusiness.updateKey(new String(keyManager.getKeystore().exportKey(findAccount(exportKeyBusiness.getAccountAddress()), exportKeyBusiness.getPassword().value(new char[]{}), exportKeyBusiness.getNewPassword())));
                 } catch (Exception e) {
                     Log.e(getClass().getName(), "", e);
                 }
@@ -490,14 +484,14 @@ public class EthWallet extends Wallet.Avatar {
         StringBuilder builder = new StringBuilder();
         List<String> mnemonicInfo = exportKeyBusiness.getMnemonicInfo();
         try {
-            List<Account> accounts = ethdroid.getKeyManager().getAccounts();
+            List<Account> accounts = keyManager.getAccounts();
 
             int i = 0;
             int lastSize = 0;
             for(String string : mnemonicInfo){
                 for(Account account : accounts){
                     if(string.equals(account.getAddress().getHex())){
-                        ECKeyPair ecKeyPair = decrypt(exportKeyBusiness.getPassword(), new String(ethdroid.getKeyManager().getKeystore().exportKey(account, exportKeyBusiness.getPassword(), exportKeyBusiness.getPassword())));
+                        ECKeyPair ecKeyPair = decrypt(exportKeyBusiness.getPassword().value(new char[]{}), new String(keyManager.getKeystore().exportKey(account, exportKeyBusiness.getPassword().value(new char[]{}), exportKeyBusiness.getPassword().value(new char[]{}))));
                         if(ecKeyPair == null)
                             return new String[0];
 
@@ -525,7 +519,7 @@ public class EthWallet extends Wallet.Avatar {
     }
 
     @Override
-    public List<String> saveMnemonic(List<String> mWordList, String passphrase) {
+    public List<String> saveMnemonic(List<String> mWordList, SafeCase passphrase) {
         StringBuilder wordBuilder = new StringBuilder();
 
         for(String s : mWordList){
@@ -568,13 +562,26 @@ public class EthWallet extends Wallet.Avatar {
         ArrayList<String> wordsInfo = new ArrayList<>();
         for(byte[] mBytes : wordsByteList){
             try {
-                wordsInfo.add(ethdroid.getKeyManager().getKeystore().importECDSAKey(mBytes, passphrase).getAddress().getHex());
+                wordsInfo.add(keyManager.getKeystore().importECDSAKey(mBytes, passphrase.value(new char[]{})).getAddress().getHex());
             } catch (Exception e) {
                 Log.e(getClass().getName(), "", e);
             }
         }
 
         return wordsInfo;
+    }
+
+    @Override
+    public void deleteWallet(DeleteAccountBusiness business) {
+
+        try {
+            keyManager.getKeystore().deleteAccount(findAccount(business.getAddress()), business.getPassword().value(new char[]{}));
+        } catch (Exception e) {
+            Log.e(business.getClass().getName(), "", e);
+            business.onDeleteFailed();
+            return;
+        }
+        business.onDeleteSucceed();
     }
 
     public static ECKeyPair decrypt(String password, String keystore)
