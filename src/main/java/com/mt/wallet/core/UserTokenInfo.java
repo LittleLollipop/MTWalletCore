@@ -16,12 +16,13 @@ package com.mt.wallet.core;
  * limitations under the License.
  */
 
+import android.support.annotation.Keep;
 import android.text.TextUtils;
 
 /**
  * Created by sai on 2018/5/9.
  */
-
+@Keep
 public class UserTokenInfo extends TokenInfo {
 
     TokenInfo tokenInfo;

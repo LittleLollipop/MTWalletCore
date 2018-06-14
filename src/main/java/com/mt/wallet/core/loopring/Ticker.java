@@ -16,10 +16,12 @@ package com.mt.wallet.core.loopring;
  * limitations under the License.
  */
 
+import android.support.annotation.Keep;
+
 /**
  * Created by sai on 2018/5/3.
  */
-
+@Keep
 public class Ticker {
 
     String name;

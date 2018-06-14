@@ -18,6 +18,7 @@ package com.mt.wallet.core.business.eth;
 
 import com.mt.wallet.core.Business;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
@@ -28,8 +29,8 @@ public abstract class ContractBusiness implements Business {
 
     String name;
     String symbol;
-    BigInteger decimals;
-    BigInteger totalSupply;
+    BigDecimal decimals;
+    BigDecimal totalSupply;
 
     protected String contractAddress;
 

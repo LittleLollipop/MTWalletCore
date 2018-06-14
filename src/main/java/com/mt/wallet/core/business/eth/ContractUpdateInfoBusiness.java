@@ -29,6 +29,7 @@ import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.utils.Numeric;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -126,10 +127,10 @@ public class ContractUpdateInfoBusiness extends ContractBusiness {
                     break;
                 case STATE_DECIMALS:
 
-                    decimals = Numeric.decodeQuantity(info);
+                    decimals = new BigDecimal(Numeric.decodeQuantity(info));
                     break;
                 case STATE_TOTALSUPPLY:
-                    totalSupply = Numeric.decodeQuantity(info);
+                    totalSupply = new BigDecimal(Numeric.decodeQuantity(info));
                     break;
                 default:
                     Log.d(getClass().getName(), "no type to update : " + info);

@@ -18,6 +18,7 @@ package com.mt.wallet.core.business.eth;
 
 import android.text.TextUtils;
 
+import com.mt.wallet.core.WalletApplication;
 import com.mt.wallet.core.business.FetchHistoryBusiness;
 import com.mt.wallet.core.TokenInfo;
 import com.mt.wallet.core.TransactionInfo;

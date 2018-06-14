@@ -16,10 +16,12 @@ package com.mt.wallet.core;
  * limitations under the License.
  */
 
+import android.support.annotation.Keep;
+
 /**
  * Created by sai on 2018/4/23.
  */
-
+@Keep
 public class TransactionInfo {
 
     String blockNumber;

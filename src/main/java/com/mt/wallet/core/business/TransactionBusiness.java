@@ -19,6 +19,7 @@ package com.mt.wallet.core.business;
 import com.mt.wallet.core.account.AccountData;
 import com.mt.wallet.core.Business;
 import com.mt.wallet.core.Wallet;
+import com.mt.wallet.core.safe.SafeCase;
 
 import java.math.BigDecimal;
 
@@ -29,7 +30,7 @@ import java.math.BigDecimal;
 public class TransactionBusiness implements Business {
 
     int accountNumber;
-    String passphrase;
+    SafeCase passphrase;
     String to;
     String value;
     CallBack callBack;
@@ -44,7 +45,7 @@ public class TransactionBusiness implements Business {
 
     }
 
-    public TransactionBusiness(int accountNumber, String passphrase, String to, String value, BigDecimal gasPrice, BigDecimal gasLimit, String hexData, CallBack callBack){
+    public TransactionBusiness(int accountNumber, SafeCase passphrase, String to, String value, BigDecimal gasPrice, BigDecimal gasLimit, String hexData, CallBack callBack){
 
         this.accountNumber = accountNumber;
         this.passphrase = passphrase;
@@ -85,7 +86,7 @@ public class TransactionBusiness implements Business {
         return accountNumber;
     }
 
-    public String getPassphrase() {
+    public SafeCase getPassphrase() {
         return passphrase;
     }
 

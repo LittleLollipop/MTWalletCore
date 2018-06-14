@@ -19,6 +19,7 @@ package com.mt.wallet.core.business;
 import com.mt.wallet.core.account.Account;
 import com.mt.wallet.core.Business;
 import com.mt.wallet.core.Wallet;
+import com.mt.wallet.core.safe.SafeCase;
 
 /**
  * Created by sai on 2018/4/27.
@@ -26,13 +27,13 @@ import com.mt.wallet.core.Wallet;
 
 public class ChangePasswordBusiness implements Business {
 
-    String password;
-    String newPassword;
+    SafeCase password;
+    SafeCase newPassword;
     Account account;
     CallBack callBack;
     String errorMessage;
 
-    public ChangePasswordBusiness(String password, String newPassword, Account account, CallBack callBack){
+    public ChangePasswordBusiness(SafeCase password, SafeCase newPassword, Account account, CallBack callBack){
 
         this.password = password;
         this.newPassword = newPassword;
@@ -56,11 +57,11 @@ public class ChangePasswordBusiness implements Business {
         callBack.onOver(errorMessage);
     }
 
-    public String getPassword() {
+    public SafeCase getPassword() {
         return password;
     }
 
-    public String getNewPassword() {
+    public SafeCase getNewPassword() {
         return newPassword;
     }
 

@@ -16,23 +16,24 @@ package com.mt.wallet.core.loopring;
  * limitations under the License.
  */
 
+import android.support.annotation.Keep;
 import android.util.Log;
 
 import com.mt.wallet.core.WalletApplication;
 import com.mt.wallet.core.walletImp.EthWallet;
+import com.mt.wallet.core.walletImp.KeyManager;
 
 import org.ethereum.geth.Account;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.utils.Numeric;
 
-import io.ethmobile.ethdroid.KeyManager;
 
 import static com.mt.wallet.core.loopring.Loopring.ORDERWALLETADDRESS;
 
 /**
  * Created by sai on 2018/5/30.
  */
-
+@Keep
 public class OriginalOrder {
 
     String delegate;

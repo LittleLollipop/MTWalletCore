@@ -39,6 +39,7 @@ public class ContractUpdateBalanceBusiness extends ContractBusiness {
 
     BigDecimal balance;
     String address;
+    String errorMessage;
     CallBack callBack;
 
     public ContractUpdateBalanceBusiness(ContractBusiness contractBusiness, String address, CallBack callBack) {
@@ -48,7 +49,7 @@ public class ContractUpdateBalanceBusiness extends ContractBusiness {
         this.callBack = callBack;
     }
 
-    public ContractUpdateBalanceBusiness(String contractAddress, BigInteger decimals, String address, CallBack callBack) {
+    public ContractUpdateBalanceBusiness(String contractAddress, BigDecimal decimals, String address, CallBack callBack) {
 
         super(null, contractAddress);
         this.address = address;
@@ -62,7 +63,7 @@ public class ContractUpdateBalanceBusiness extends ContractBusiness {
         try {
             this.balance = new BigDecimal(Numeric.decodeQuantity(info)).divide(BigDecimal.TEN.pow(decimals.intValue()));
         }catch (MessageDecodingException e){
-            this.balance = new BigDecimal(0);
+            errorMessage = e.getMessage();
         }
     }
 
@@ -83,11 +84,19 @@ public class ContractUpdateBalanceBusiness extends ContractBusiness {
     @Override
     public void finish() {
 
-        callBack.onUpdateBalance(balance);
+        if(balance == null){
+            callBack.onError(errorMessage);
+        }else{
+            callBack.onUpdateBalance(balance);
+        }
+
+
     }
 
     public interface CallBack{
 
         void onUpdateBalance(BigDecimal balanceInfo);
+
+        void onError(String message);
     }
 }

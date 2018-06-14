@@ -21,6 +21,7 @@ import com.mt.wallet.core.account.Account;
 import com.mt.wallet.core.account.AccountData;
 import com.mt.wallet.core.Business;
 import com.mt.wallet.core.Wallet;
+import com.mt.wallet.core.safe.SafeCase;
 
 import org.web3j.utils.Numeric;
 
@@ -38,14 +39,14 @@ public class ImportAccountBusiness implements Business {
     String walletName;
     String keyText;
     String passphrase;
-    String newPassphrase;
+    SafeCase newPassphrase;
     CallBack callBack;
     String walletType;
     int accountNumber = -1;
 
     String info;
 
-    public ImportAccountBusiness(String walletName, String keyText, String passphrase, String newPassphrase, CallBack callBack, int type){
+    public ImportAccountBusiness(String walletName, String keyText, String passphrase, SafeCase newPassphrase, CallBack callBack, int type){
 
         this.walletName = walletName;
         this.keyText = keyText;
@@ -55,7 +56,7 @@ public class ImportAccountBusiness implements Business {
         this.type = type;
     }
 
-    public ImportAccountBusiness(String walletName, String privateKey, String newPassphrase, CallBack callBack){
+    public ImportAccountBusiness(String walletName, String privateKey, SafeCase newPassphrase, CallBack callBack){
 
         this(walletName, privateKey, null, newPassphrase, callBack, IMPORT_TYPE_ECDSAKEY);
     }
@@ -75,11 +76,16 @@ public class ImportAccountBusiness implements Business {
     @Override
     public void finish() {
 
-        Account account = new Account(walletName, info);
-        account.addContracts(Config.ETH_FLAG);
-        AccountData.putAccount(account);
-        if(callBack != null)
-            callBack.onImportOver(info);
+        if(accountNumber == -1){
+            if(callBack != null)
+                callBack.onImportOver(accountNumber, info);
+        }else{
+            Account account = new Account(walletName, info);
+            account.addContracts(Config.ETH_FLAG);
+            AccountData.putAccount(account);
+            if(callBack != null)
+                callBack.onImportOver(accountNumber, info);
+        }
     }
 
     public String getKeyText() {
@@ -90,7 +96,7 @@ public class ImportAccountBusiness implements Business {
         return passphrase;
     }
 
-    public String getNewPassphrase() {
+    public SafeCase getNewPassphrase() {
         return newPassphrase;
     }
 
@@ -110,6 +116,6 @@ public class ImportAccountBusiness implements Business {
 
     public interface CallBack{
 
-        void onImportOver(String info);
+        void onImportOver(int accountNumber, String info);
     }
 }

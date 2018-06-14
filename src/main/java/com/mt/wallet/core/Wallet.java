@@ -21,6 +21,7 @@ import android.util.SparseArray;
 import com.mt.wallet.core.account.Account;
 import com.mt.wallet.core.account.AccountData;
 import com.mt.wallet.core.business.ChangePasswordBusiness;
+import com.mt.wallet.core.business.DeleteAccountBusiness;
 import com.mt.wallet.core.business.ExportKeyBusiness;
 import com.mt.wallet.core.business.FetchHistoryBusiness;
 import com.mt.wallet.core.business.eth.ContractBusiness;
@@ -29,6 +30,7 @@ import com.mt.wallet.core.business.FetchAccountsBusiness;
 import com.mt.wallet.core.business.ImportAccountBusiness;
 import com.mt.wallet.core.business.TransactionBusiness;
 import com.mt.wallet.core.business.UpdateBalanceBusiness;
+import com.mt.wallet.core.safe.SafeCase;
 import com.mt.wallet.core.walletImp.EthWallet;
 import com.orhanobut.hawk.Hawk;
 import com.sai.frame.footstone.base.StateMachine;
@@ -192,10 +194,16 @@ public class Wallet extends StateMachine {
 
     public void updateAccount() {
 
+        SparseArray<Account> accounts = AccountData.getAccounts();
+        int def = Hawk.get(DEFAULTACCOUNT, 0).intValue();
+
+        while(def >= accounts.size())
+            def--;
+
         if(accountNow == null){
-            accountNow = new WalletAccount(AccountData.getAccounts().get(Hawk.get(DEFAULTACCOUNT, 0).intValue()));
+            accountNow = new WalletAccount(accounts.get(def));
         }else{
-            accountNow.account = AccountData.getAccounts().get(Hawk.get(DEFAULTACCOUNT, 0).intValue());
+            accountNow.account = accounts.get(def);
         }
     }
 
@@ -204,12 +212,18 @@ public class Wallet extends StateMachine {
         SparseArray<Account> accounts = AccountData.getAccounts();
 
         for(int i = accounts.size() - 1; i >= 0; i--){
-            if(account.getName().equals(accounts.get(i).getName())){
+            if(account.getAddress().equals(accounts.get(i).getAddress())){
                 Hawk.put(DEFAULTACCOUNT, i);
                 break;
             }
         }
         updateAccount();
+    }
+
+    public void deleteAccount(Account account) {
+        AccountData.deleteAccount(account);
+        if(account.getAddress().equals(accountNow.getAddress()))
+            accountNow = null;
     }
 
     public static class Config{
@@ -337,6 +351,8 @@ public class Wallet extends StateMachine {
 
         public abstract void exportKey(ExportKeyBusiness exportKeyBusiness);
 
-        public abstract List<String> saveMnemonic(List<String> mWordList, String passphrase);
+        public abstract List<String> saveMnemonic(List<String> mWordList, SafeCase passphrase);
+
+        public abstract void deleteWallet(DeleteAccountBusiness password);
     }
 }
